@@ -1,0 +1,184 @@
+name: Production - Push
+
+on:
+  push:
+    branches: [prod]
+
+jobs:
+  format:
+    name: Code format in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Code Format
+        run: npm run format
+  lint:
+    name: Lint in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+  unit-tests:
+    name: Unit tests in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Unit Tests
+        run: npm test
+  build:
+    name: Build in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+  deploy:
+    name: Deploy the production branch on Heroku
+
+    needs: [format, lint, unit-tests, build]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+          bundler-cache: true
+
+      - name: Install Dpl
+        run: gem install dpl
+
+      - name: Deploy
+        env:
+          HEROKU_APP_PRODUCTION: ${{ secrets.HEROKU_APP_PRODUCTION }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: dpl --provider=heroku --app="$HEROKU_APP_PRODUCTION" --api-key="$HEROKU_API_KEY"
