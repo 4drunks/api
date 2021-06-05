@@ -1,0 +1,33 @@
+name: Production - Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - Production - Push
+    types:
+      - completed
+
+jobs:
+  deploy:
+    name: Deploy the production branch on Heroku
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Fetch latest list of available packages from the repositories
+        run: apt-get update -qy
+
+      - name: Install Ruby
+        run: apt-get install -y ruby-dev
+
+      - name: Install Dpl
+        run: gem install dpl
+
+      - name: Deploy
+        env:
+          HEROKU_APP_PRODUCTION: ${{ secrets.HEROKU_APP_PRODUCTION }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: dpl --provider=heroku --app="$HEROKU_APP_PRODUCTION" --api-key="$HEROKU_API_KEY"
