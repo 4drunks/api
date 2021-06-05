@@ -1,0 +1,235 @@
+name: Production - Pull Request
+
+on:
+  pull_request:
+    branches: [prod]
+
+jobs:
+  audit:
+    name: Audit
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Audit
+        run: npm audit
+  format:
+    name: Format in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    needs: audit
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Format
+        run: npm run format
+  lint:
+    name: Lint in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    needs: audit
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+  commitlint:
+    name: commitlint
+
+    needs: audit
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: commitlint
+        run: npm run commitlint
+  tests:
+    name: Tests in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    needs: [format, lint, commitlint]
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Tests
+        run: npm test
+  build:
+    name: Build in ${{ matrix.os }} with Node.js ${{ matrix.node }}
+
+    needs: tests
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['14', '15', '16']
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo '::set-output name=dir::$(npm config get cache)'
+
+      - name: npm cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
